@@ -1,21 +1,32 @@
+source /usr/local/greenplum-db/greenplum_path.sh
+export MASTER_DATA_DIRECTORY=/data/master/gpseg-1
+export GPPORT=5432
+export GPUSER=gpadmin
+export GPDATABASE=postgres
+export LD_PRELOAD=/lib64/libz.so.1 ps
+export GPPERFMONHOME=/usr/local/greenplum-cc-web
+source $GPPERFMONHOME/gpcc_path.sh
+
+
 alias all='gpssh -f /home/gpadmin/gpconfigs/hostfile_all'
 alias seg='gpssh  -f /home/gpadmin/gpconfigs/hostfile_seg'
 
 ## gpdb 6
-alias cq='psql -c "select now()-query_start, pid, usename, sess_id, query from pg_stat_activity where state not like '\''%idle%'\'' order by 1 desc;"'
-alias invalid='psql -c "SELECT * from gp_configuration where valid='\''f'\'';"'
-alias is='psql -c " SELECT now()-query_start, usename, pid, sess_id, query from pg_stat_activity where state like '\''idle'\'' order by 1 desc;"'
-alias it='psql  -c "SELECT now()-query_start, usename, pid, sess_id, query FROM pg_stat_activity where trim(query) like '\''%in transaction'\'' ORDER BY 1 DESC;"'
-alias locks='psql -c " SELECT pid, relname, locktype, mode, a.gp_segment_id from pg_locks a, pg_class where relation=oid and relname not like '\''pg_%'\'' order by 3;"'
-alias na='psql -c "SELECT count(relname) from pg_class where reltuples=0 and relpages=0 and relkind='\''r'\'' and relname not like '\''t%'\'' and relname not like '\''err%'\'';" '
-alias nan='psql -c "SELECT '\''analyze '\''||nspname||'\''.'\''||relname||'\'';'\'' from pg_class c, pg_namespace nc where nc.oid = c.relnamespace and c.reltuples=0 and c.relpages=0 and c.relkind='\''r'\'' and c.relname not like '\''t%'\'' and c.relname not like '\''err%'\'';"'
+alias cq='psql -c "SELECT now()-query_start as elapsed, pid, usename, sess_id, query FROM pg_stat_activity WHERE state not like '\''%idle%'\'' ORDER BY 1 desc;"'
+alias invalid='psql -c "SELECT * FROM gp_segment_configuration WHERE status='\''d'\'' or role!=preferred_role;"'
+alias is='psql -c "SELECT now()-query_start as elapsed, usename, pid, sess_id, query FROM pg_stat_activity WHERE state like '\''idle'\'' ORDER BY 1 desc;"'
+alias it='psql -c "SELECT now()-query_start as elapsed, usename, pid, sess_id, query FROM pg_stat_activity WHERE trim(query) like '\''%in transaction'\'' ORDER BY 1 desc;"'
+alias locks='psql -c "SELECT pid, relname, locktype, mode, a.gp_segment_id FROM pg_locks a, pg_class WHERE relation=oid and relname not like '\''pg_%'\'' ORDER BY 3;"'
+alias na='psql -c "SELECT count(relname) FROM pg_class WHERE reltuples=0 and relpages=0 and relkind='\''r'\'' and relname not like '\''t%'\'' and relname not like '\''err%'\'';"'
+alias nan='psql -c "SELECT '\''analyze '\''||nspname||'\''.'\''||relname||'\'';'\'' FROM pg_class c, pg_namespace nc WHERE nc.oid = c.relnamespace and c.reltuples=0 and c.relpages=0 and c.relkind='\''r'\'' and c.relname not like '\''t%'\'' and c.relname not like '\''err%'\'';"'
 alias pgoption='PGOPTIONS="-c gp_session_role=utility" psql -p 5432'
-alias qq='psql -c " select now()-query_start, usename, client_addr, waiting, pid, sess_id, rsgname from pg_stat_activity  where state not like '\''%idle%'\'' order by 4, 1 desc;"'
-alias rss='psql -c " select a.rsqname, a.rsqcountlimit as countlimit, a.rsqcountvalue as countvalue, a.rsqwaiters as waiters, a.rsqholders as running ,a.rsqcostlimit as costlimit, a.rsqcostvalue as costvalue, b.rsqignorecostlimit as ignorecostlimit, b.rsqovercommit as overcommit from pg_resqueue_status a, pg_resqueue b where a.rsqname =b.rsqname order by 1;"'
-alias rs='psql  -c " select rsqname, rsqcountlimit cntlimit, rsqcountvalue cntval, rsqcostlimit costlimit, rsqcostvalue vostval, rsqmemorylimit memlimit, rsqmemoryvalue memval, rsqwaiters waiters, rsqholders holders from gp_toolkit.gp_resqueue_status;"'
-alias sq='psql -c " select * from pg_resqueue order by 1;"'
-alias tq='psql -c " select count(*) from pg_stat_activity;"'
-alias ts='psql -c "select n.nspname from pg_namespace n where nspname not in (select '\''pg_temp_'\''||sess_id from pg_stat_activity) and nspname  like '\''pg_temp%'\'';"' 
+alias qq='psql -c "SELECT now()-query_start as elapsed, usename, client_addr, waiting, pid, sess_id, rsgname FROM pg_stat_activity WHERE state not like '\''%idle%'\'' order by 4, 1 desc;"'
+alias rss='psql -c "SELECT a.rsqname, a.rsqcountlimit as countlimit, a.rsqcountvalue as countvalue, a.rsqwaiters as waiters, a.rsqholders as running ,a.rsqcostlimit as costlimit, a.rsqcostvalue as costvalue, b.rsqignorecostlimit as ignorecostlimit, b.rsqovercommit as overcommit FROM pg_resqueue_status a, pg_resqueue b WHERE a.rsqname =b.rsqname ORDER BY 1;"'
+alias rs='psql  -c "SELECT rsqname, rsqcountlimit as cntlimit, rsqcountvalue as cntval, rsqcostlimit as costlimit, rsqcostvalue as vostval, rsqmemorylimit as memlimit, rsqmemoryvalue as memval, rsqwaiters as waiters, rsqholders as holders FROM gp_toolkit.gp_resqueue_status;"'
+alias sq='psql -c "SELECT * FROM pg_resqueue ORDER BY 1;"'
+alias tq='psql -c "SELECT count(*) FROM pg_stat_activity;"'
+alias ts='psql -c "SELECT n.nspname FROM pg_namespace n WHERE nspname not in (SELECT '\''pg_temp_'\''||sess_id FROM pg_stat_activity) and nspname like '\''pg_temp%'\'';"'
+ 
 alias rsh='psql -c " SELECT a.rsqname,a.rsqcountlimit,a.rsqcountvalue,a.rsqwaiters,a.rsqholders,a.rsqcostlimit,a.rsqcostvalue,a.rsqmemorylimit,a.rsqmemoryvalue,b.rsqignorecostlimit,b.rsqovercommit,c.ressetting FROM gp_toolkit.gp_resqueue_status a INNER JOIN pg_resqueue b ON b.rsqname = a.rsqname INNER JOIN pg_resqueue_attributes c ON c.rsqname = a.rsqname AND c.restypid = 5 ORDER BY 1;"'
 alias reorg='psql -AXtc "select '\''ALTER TABLE '\''||bdinspname||'\''.'\''||bdirelname||'\'' SET WITH (REORGANIZE=TRUE); '\'' qry from gp_toolkit.gp_bloat_diag where bdirelpages*32/1024 > 10 ;" '
 alias rs='psql  -c " select rsqname, rsqcountlimit cntlimit, rsqcountvalue cntval, rsqcostlimit costlimit, rsqcostvalue costval, rsqmemorylimit memlimit, rsqmemoryvalue memval, rsqwaiters waiters, rsqholders holders from gp_toolkit.gp_resqueue_status;"'

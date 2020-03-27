@@ -1,13 +1,14 @@
+### GPDB Environment Setting
 source /usr/local/greenplum-db/greenplum_path.sh
 export MASTER_DATA_DIRECTORY=/data/master/gpseg-1
-export GPPORT=5432
-export GPUSER=gpadmin
-export GPDATABASE=postgres
+export PGPORT=5432
+export PGUSER=gpadmin
+export PGDATABASE=gpdemo
 export LD_PRELOAD=/lib64/libz.so.1
-export GPPERFMONHOME=/usr/local/greenplum-cc-web
-source $GPPERFMONHOME/gpcc_path.sh
+export GPCC=/usr/local/greenplum-cc-web
+source $GPCC/gpcc_path.sh
 
-alias all='gpssh -f /home/gpadmin/gpconfigs/hostfile_all'
+alias all='gpssh -f /home/gpadmin/gpconfigs/hostfile'
 alias seg='gpssh -f /home/gpadmin/gpconfigs/hostfile_seg'
 
 ## gpdb 6

@@ -5,7 +5,7 @@ export GPHOME=/usr/local/greenplum-db
 export PGPORT=5432
 export PGUSER=gpadmin
 export PGDATABASE=gpdemo
-export LD_PRELOAD=/lib64/libz.so.1
+export LD_PRELOAD=/lib64/libz.so.1 ps
 export GPCCHOME=/usr/local/greenplum-cc-web
 source $GPCCHOME/gpcc_path.sh
 

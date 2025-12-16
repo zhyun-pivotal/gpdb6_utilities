@@ -13,7 +13,7 @@ log() { echo "[$(date '+%F %T')] $*" | tee -a "$LOG_FILE" ; }
 log "Start VACUUM ANALYZE (pg_catalog only)"
 
 DB_LIST=$(psql -qAtX -d "$BASE_DB" -c \
-"SELECT datname FROM pg_database WHERE datallowconn AND datname NOT IN ('template0', 'template1', 'postgres');")
+"SELECT datname FROM pg_database WHERE datallowconn = 't' AND datname NOT IN ('template0', 'template1', 'postgres');")
 
 if [[ -z "$DB_LIST" ]]; then
   log "DB list is empty. Terminate the scripts."

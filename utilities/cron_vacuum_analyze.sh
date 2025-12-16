@@ -29,9 +29,8 @@ IFS=$'\n'
 
 for db in $DB_LIST; do
   log " "
-  log "=============================================="
   log "=== VACUUM ANALYZE pg_catalog in DB: ${db} ==="
-  log "=============================================="
+  log "Start at : $(date +%Y-%m-%d)" 
   start_s=$(date +%s)
   DB_SUCCESS=0
   DB_FAILURE=0
@@ -48,7 +47,8 @@ for db in $DB_LIST; do
     end_s=$(date +%s)
     elapsed=$((end_s - start_s))
     TOTAL_TIME=$((TOTAL_TIME + elapsed))
-    log "Completed DB name : ${db} (elapsed : ${elapsed}sec, Success : ${DB_SUCCESS}, FAILURE : ${DB_FAILURE})"
+	log "Completed at : $(date +%Y-%m-%d)" 
+    log "=== Completed DB name : ${db} (elapsed : ${elapsed}sec, Success : ${DB_SUCCESS}, FAILURE : ${DB_FAILURE}) ==="
     continue
   fi
 
@@ -57,14 +57,15 @@ for db in $DB_LIST; do
     end_s=$(date +%s)
     elapsed=$((end_s - start_s))
     TOTAL_TIME=$((TOTAL_TIME + elapsed))
-    log "Completed DB name : ${db} (elapsed : ${elapsed}sec, Success : ${DB_SUCCESS}, Failure : ${DB_FAILURE})"
+	log "Completed at : $(date +%Y-%m-%d)" 
+    log "=== Completed DB name : ${db} (elapsed : ${elapsed}sec, Success : ${DB_SUCCESS}, FAILURE : ${DB_FAILURE}) ==="
     continue
   fi
 
   ### Execute VACUUM ANALYZE for each tables
   for tbl in $TABLES; do
-    log " -> VACUUM ANALYZE $tbl"
-    psql -q -d "$db" -c "VACUUM ANALYZE $tbl;" >> "$LOG_FILE" 2>&1
+    log " -> VACUUM ANALYZE VERBOSE $tbl"
+    psql -q -d "$db" -c "VACUUM ANALYZE VERBOSE $tbl;" >> "$LOG_FILE" 2>&1
     VA_RESULT=$?
     if [ "$VA_RESULT" -eq 0 ]; then
   	  DB_SUCCESS=$((DB_SUCCESS + 1))
@@ -76,7 +77,8 @@ for db in $DB_LIST; do
 
   end_s=$(date +%s)
   elapsed=$((end_s - start_s))
-  log "Completed DB name : ${db} (elapsed : ${elapsed}sec, Success : ${DB_SUCCESS}, Failure : ${DB_FAILURE})"
+  log "Completed at : $(date +%Y-%m-%d)" 
+  log "=== Completed DB name : ${db} (elapsed : ${elapsed}sec, Success : ${DB_SUCCESS}, FAILURE : ${DB_FAILURE}) ==="
   TOTAL_TIME=$((TOTAL_TIME + elapsed))
   SUCCESS_COUNT=$((SUCCESS_COUNT + DB_SUCCESS))
   FAILURE_COUNT=$((FAILURE_COUNT + DB_FAILURE))

@@ -6,7 +6,7 @@ source /usr/local/greenplum-db/greenplum_path.sh
 DATE="/usr/bin/date"
 ECHO="/usr/bin/echo"
 BASEDB="${PGDATABASE:-postgres}"
-LOGFILE=/data/utilities/log/cron_vacuum_analyze_`$DATE '+%Y-%m-%d'`.log
+LOGFILE=/data/utilities/log/cron_vacuum_analyze_`$DATE '+%Y%m%d_%H%M'`.log
 #VCOMMAND="VACUUM ANALYZE VERBOSE "
 VCOMMAND="VACUUM ANALYZE "
 

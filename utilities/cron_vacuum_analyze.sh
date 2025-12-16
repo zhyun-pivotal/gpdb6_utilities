@@ -3,13 +3,16 @@ source ~/.bash_profile
 source /usr/local/greenplum-db/greenplum_path.sh
 
 ### Variable Setting
+DATE="/usr/bin/date"
+ECHO="/usr/bin/echo"
 BASEDB="${PGDATABASE:-gpadmin}"
-EXEDATE="$(date +%Y-%m-%d)"
-LOGFILE="/data/utilities/log/cron_vacuum_analyze_${EXEDATE}.log"
-#VCOMMAND="VACUUM ANALYZE VERBOSE"
-VCOMMAND="VACUUM ANALYZE"
+LOGFILE=/data/utilities/log/cron_vacuum_analyze__`$DATE '+%Y-%m-%d'`.log
+#VCOMMAND="VACUUM ANALYZE VERBOSE "
+VCOMMAND="VACUUM ANALYZE "
 
-log() { echo "[$(date '+%F %T')] $*" | tee -a "$LOGFILE" ; }
+### Declare a log function that records the date and time in all logs
+log() { $ECHO "[$(date '+%F %T')] $*" >> $LOGFILE 2>&1 ; }
+
 log "Start VACUUM ANALYZE (pg_catalog only)"
 
 DBLIST=$(psql -qAtX -d "$BASEDB" -c \
@@ -31,40 +34,41 @@ IFS=$'\n'
 
 for db in $DBLIST; do
   log " "
-  log "=== VACUUM ANALYZE pg_catalog in DB: ${db} ==="
-  STARTSEC=$(date +%s)
+  log "=== Start DB: ${db} ==="
+  STARTSEC=$($DATE +%s)
   DB_SUCCESS=0
   DB_FAILURE=0
 
   TABLES=$(
     psql -qAtX -d "${db}" -c \
-    "SELECT 'pg_catalog.'||c.relname FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'pg_catalog' AND c.relkind IN('r','t','m');" 2>> "$LOGFILE"
+    "SELECT 'pg_catalog.'||c.relname FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'pg_catalog' AND c.relkind IN('r','t','m');" 2>> $LOGFILE
     )
+	
   TABLES_RESULTS=$?
   if [[ "$TABLES_RESULT" -ne 0 ]]; then
     log "[ERROR] Failed to get pg_catalog tables in DB : ${db}"
     DB_FAILURE=1
     FAILURE_COUNT=$((FAILURE_COUNT + 1))
-    ENDSEC=$(date +%s)
+    ENDSEC=$($DATE +%s)
     ELAPSEDSEC=$((ENDSEC - STARTSEC))
     TOTALTIME=$((TOTALTIME + ELAPSEDSEC))
-    log "=== Completed DB name : ${db} (Elapsed : ${ELAPSEDSEC}sec, Success : ${DB_SUCCESS}, FAILURE : ${DB_FAILURE}) ==="
+    log "=== Completed DB : ${db} (Elapsed : ${ELAPSEDSEC}sec, Success : ${DB_SUCCESS}, FAILURE : ${DB_FAILURE}) ==="
     continue
   fi
 
   if [[ -z "$TABLES" ]]; then
     log "No pg_catalog tables found in ${db}"
-    ENDSEC=$(date +%s)
+    ENDSEC=$($DATE +%s)
     ELAPSEDSEC=$((ENDSEC - STARTSEC))
     TOTALTIME=$((TOTALTIME + ELAPSEDSEC))
-    log "=== Completed DB name : ${db} (ELAPSEDSEC : ${ELAPSEDSEC}sec, Success : ${DB_SUCCESS}, FAILURE : ${DB_FAILURE}) ==="
+    log "=== Completed DB : ${db} (ELAPSEDSEC : ${ELAPSEDSEC}sec, Success : ${DB_SUCCESS}, FAILURE : ${DB_FAILURE}) ==="
     continue
   fi
 
   ### Execute VACUUM ANALYZE for each tables
   for tbl in $TABLES; do
     log " -> ${VCOMMAND} ${tbl}"
-    psql -q -d "$db" -c "$VCOMMAND ${tbl};" >> "$LOGFILE" 2>&1
+    psql -q -d "${db}" -c "$VCOMMAND ${tbl};" >> "$LOGFILE" 2>&1
     VA_RESULT=$?
     if [ "$VA_RESULT" -eq 0 ]; then
   	  DB_SUCCESS=$((DB_SUCCESS + 1))
@@ -74,9 +78,9 @@ for db in $DBLIST; do
     fi
   done
 
-  ENDSEC=$(date +%s)
+  ENDSEC=$($DATE +%s)
   ELAPSEDSEC=$((ENDSEC - STARTSEC))
-  log "=== Completed DB name : ${db} (ELAPSEDSEC : ${ELAPSEDSEC}sec, Success : ${DB_SUCCESS}, FAILURE : ${DB_FAILURE}) ==="
+  log "=== Completed DB : ${db} (ELAPSEDSEC : ${ELAPSEDSEC}sec, Success : ${DB_SUCCESS}, FAILURE : ${DB_FAILURE}) ==="
   
   TOTALTIME=$((TOTALTIME + ELAPSEDSEC))
   SUCCESS_COUNT=$((SUCCESS_COUNT + DB_SUCCESS))

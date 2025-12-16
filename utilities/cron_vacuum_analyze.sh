@@ -5,7 +5,7 @@ source /usr/local/greenplum-db/greenplum_path.sh
 ### Variable Setting
 DATE="/usr/bin/date"
 ECHO="/usr/bin/echo"
-BASEDB="${PGDATABASE:-gpadmin}"
+BASEDB="${PGDATABASE:-postgres}"
 LOGFILE=/data/utilities/log/cron_vacuum_analyze_`$DATE '+%Y-%m-%d'`.log
 #VCOMMAND="VACUUM ANALYZE VERBOSE "
 VCOMMAND="VACUUM ANALYZE "
@@ -13,7 +13,7 @@ VCOMMAND="VACUUM ANALYZE "
 ### Declare a log function that records the date and time in all logs
 log() { $ECHO "[$(date '+%F %T')] $*" >> $LOGFILE 2>&1 ; }
 
-log "Start VACUUM ANALYZE (pg_catalog only)"
+log "=== Start catalog tables VACUUM ANALYZE ==="
 
 DBLIST=$(psql -qAtX -d "$BASEDB" -c \
 "SELECT datname FROM pg_database WHERE datallowconn = 't' AND datname NOT IN ('template0', 'template1', 'postgres');")
@@ -52,7 +52,7 @@ for db in $DBLIST; do
     ENDSEC=$($DATE +%s)
     ELAPSEDSEC=$((ENDSEC - STARTSEC))
     TOTALTIME=$((TOTALTIME + ELAPSEDSEC))
-    log "=== Completed DB : ${db} (Elapsed : ${ELAPSEDSEC}sec, Success : ${DB_SUCCESS}, FAILURE : ${DB_FAILURE}) ==="
+    log "=== Complete DB : ${db} (Elapsed : ${ELAPSEDSEC}sec, Success : ${DB_SUCCESS}, FAILURE : ${DB_FAILURE}) ==="
     continue
   fi
 
@@ -61,7 +61,7 @@ for db in $DBLIST; do
     ENDSEC=$($DATE +%s)
     ELAPSEDSEC=$((ENDSEC - STARTSEC))
     TOTALTIME=$((TOTALTIME + ELAPSEDSEC))
-    log "=== Completed DB : ${db} (ELAPSEDSEC : ${ELAPSEDSEC}sec, Success : ${DB_SUCCESS}, FAILURE : ${DB_FAILURE}) ==="
+    log "=== Complete DB : ${db} (ELAPSEDSEC : ${ELAPSEDSEC}sec, Success : ${DB_SUCCESS}, FAILURE : ${DB_FAILURE}) ==="
     continue
   fi
 
@@ -80,7 +80,7 @@ for db in $DBLIST; do
 
   ENDSEC=$($DATE +%s)
   ELAPSEDSEC=$((ENDSEC - STARTSEC))
-  log "=== Completed DB : ${db} (ELAPSEDSEC : ${ELAPSEDSEC}sec, Success : ${DB_SUCCESS}, FAILURE : ${DB_FAILURE}) ==="
+  log "=== Complete DB : ${db} (ELAPSEDSEC : ${ELAPSEDSEC}sec, Success : ${DB_SUCCESS}, FAILURE : ${DB_FAILURE}) ==="
   
   TOTALTIME=$((TOTALTIME + ELAPSEDSEC))
   SUCCESS_COUNT=$((SUCCESS_COUNT + DB_SUCCESS))
@@ -89,6 +89,7 @@ done
 
 IFS="$OLD_IFS"
 
+log "=== Complete catalog tables VACUUM ANALYZE ==="
 log " "
 log "=============================================="
 log " Total ELAPSEDSEC : ${TOTALTIME}sec"

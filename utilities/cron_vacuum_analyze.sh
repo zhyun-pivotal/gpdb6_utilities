@@ -29,48 +29,58 @@ FAILURE_COUNT=0
 TOTALTIME=0
 
 ### Handling cases where the db name contains spaces
-OLD_IFS="$IFS"
-IFS=$'\n'
+#OLD_IFS="$IFS"
+#IFS=$'\n'
 
-for db in $DBLIST; do
+#for db in $DBLIST; do
+$ECHO "$DBLIST" | while read -r LINE
+do
+  DBNM=$($ECHO "$LINE")
+  
   log " "
-  log "=== Start DB: ${db} ==="
+  log "=== Start DB: ${DBNM} ==="
   STARTSEC=$($DATE +%s)
   DB_SUCCESS=0
   DB_FAILURE=0
 
   TABLES=$(
-    psql -qAtX -d "${db}" -c \
+    psql -qAtX -d "${DBNM}" -c \
     "SELECT n.nspname, c.relname FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'pg_catalog' AND c.relkind IN('r','t','m');" 2>> $LOGFILE
     )
 	
   TABLES_RS=$?
   if [[ "$TABLES_RS" -ne 0 ]]; then
-    log "[ERROR] Failed to get pg_catalog tables in DB : ${db}"
+    log "[ERROR] Failed to get pg_catalog tables in DB : ${DBNM}"
     DB_FAILURE=1
     FAILURE_COUNT=$((FAILURE_COUNT + 1))
     ENDSEC=$($DATE +%s)
     ELAPSEDSEC=$((ENDSEC - STARTSEC))
     TOTALTIME=$((TOTALTIME + ELAPSEDSEC))
-    log "=== Complete DB : ${db} (Elapsed : ${ELAPSEDSEC}sec, Success : ${DB_SUCCESS}, FAILURE : ${DB_FAILURE}) ==="
+    log "=== Terminated DB : ${DBNM} (Elapsed : ${ELAPSEDSEC}sec, Success : ${DB_SUCCESS}, FAILURE : ${DB_FAILURE}) ==="
     continue
   fi
 
   if [[ -z "$TABLES" ]]; then
-    log "[ERROR] No pg_catalog tables found in DB : ${db}"
+    log "[ERROR] No pg_catalog tables found in DB : ${DBNM}"
     ENDSEC=$($DATE +%s)
     ELAPSEDSEC=$((ENDSEC - STARTSEC))
     TOTALTIME=$((TOTALTIME + ELAPSEDSEC))
-    log "=== Complete DB : ${db} (ELAPSEDSEC : ${ELAPSEDSEC}sec, Success : ${DB_SUCCESS}, FAILURE : ${DB_FAILURE}) ==="
+    log "=== Terminated DB : ${DBNM} (ELAPSEDSEC : ${ELAPSEDSEC}sec, Success : ${DB_SUCCESS}, FAILURE : ${DB_FAILURE}) ==="
     continue
   fi
 
   ### Execute VACUUM ANALYZE for each tables
-  for tbl in $TABLES; do
-    log " -> ${VCOMMAND} ${tbl}"
-    psql -q -d "${db}" -c "$VCOMMAND ${tbl};" >> "$LOGFILE" 2>&1
-    VA_RESULT=$?
-    if [ "$VA_RESULT" -eq 0 ]; then
+  #for tbl in $TABLES; do
+  $ECHO "$TABLES" | while read -r LINE
+  do
+    SCH=$($ECHO "$LINE" | cut -d'|' -f1)
+    TBL=$($ECHO "$LINE" | cut -d'|' -f2)
+	
+    log " -> ${VCOMMAND} ${SCH}.${TBL}"
+    psql -q -d "${DBNM}" -c "$VCOMMAND \"${SCH}\".\"${TBL}\";" >> "$LOGFILE" 2>&1
+    
+	VA_RS=$?
+    if [ "$VA_RS" -eq 0 ]; then
   	  DB_SUCCESS=$((DB_SUCCESS + 1))
 	else
 	  log "[WARN] ${VCOMMAND} Fail : ${tbl}"
@@ -80,19 +90,19 @@ for db in $DBLIST; do
 
   ENDSEC=$($DATE +%s)
   ELAPSEDSEC=$((ENDSEC - STARTSEC))
-  log "=== Complete DB : ${db} (ELAPSEDSEC : ${ELAPSEDSEC}sec, Success : ${DB_SUCCESS}, FAILURE : ${DB_FAILURE}) ==="
+  log "=== Complete DB : ${DBNM} (ELAPSEDSEC : ${ELAPSEDSEC}sec, Success : ${DB_SUCCESS}, FAILURE : ${DB_FAILURE}) ==="
   
   TOTALTIME=$((TOTALTIME + ELAPSEDSEC))
   SUCCESS_COUNT=$((SUCCESS_COUNT + DB_SUCCESS))
   FAILURE_COUNT=$((FAILURE_COUNT + DB_FAILURE))
 done
 
-IFS="$OLD_IFS"
+#IFS="$OLD_IFS"
 
 log "=== Complete catalog tables VACUUM ANALYZE ==="
 log " "
 log "=============================================="
-log " Total ELAPSEDSEC : ${TOTALTIME}sec"
+log " Total ELAPSEDSEC : ${TOTALTIME} sec"
 log " Total Success : ${SUCCESS_COUNT}"
 log " Total Failure : ${FAILURE_COUNT}"
 log "=============================================="

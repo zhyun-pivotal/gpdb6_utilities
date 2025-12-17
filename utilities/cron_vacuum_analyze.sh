@@ -41,11 +41,11 @@ for db in $DBLIST; do
 
   TABLES=$(
     psql -qAtX -d "${db}" -c \
-    "SELECT 'pg_catalog.'||c.relname FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'pg_catalog' AND c.relkind IN('r','t','m');" 2>> $LOGFILE
+    "SELECT n.nspname, c.relname FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'pg_catalog' AND c.relkind IN('r','t','m');" 2>> $LOGFILE
     )
 	
-  TABLES_RESULTS=$?
-  if [[ "$TABLES_RESULT" -ne 0 ]]; then
+  TABLES_RS=$?
+  if [[ "$TABLES_RS" -ne 0 ]]; then
     log "[ERROR] Failed to get pg_catalog tables in DB : ${db}"
     DB_FAILURE=1
     FAILURE_COUNT=$((FAILURE_COUNT + 1))
@@ -57,7 +57,7 @@ for db in $DBLIST; do
   fi
 
   if [[ -z "$TABLES" ]]; then
-    log "No pg_catalog tables found in ${db}"
+    log "[ERROR] No pg_catalog tables found in DB : ${db}"
     ENDSEC=$($DATE +%s)
     ELAPSEDSEC=$((ENDSEC - STARTSEC))
     TOTALTIME=$((TOTALTIME + ELAPSEDSEC))
@@ -96,5 +96,3 @@ log " Total ELAPSEDSEC : ${TOTALTIME}sec"
 log " Total Success : ${SUCCESS_COUNT}"
 log " Total Failure : ${FAILURE_COUNT}"
 log "=============================================="
-
-
